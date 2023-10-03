@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" />
+</head>
+<body onload="getAllUsers()">
+
+    <div id="navbar">
+      <nav class="navbar navbar-light bg-light">
+        <div class="d-flex flex-row">
+          <a class="navbar-brand post" id="userName" style="color: blue;"></a>
+          <a class="navbar-brand" href="employees.html">Employees</a>
+          <a class="navbar-brand" href="departments.html">Departments</a>
+          <a class="navbar-brand" href="shifts.html">Shifts</a>
+          <a class="navbar-brand" href="users.html">Users</a>
+          
+  
+        </div>
+        <button type="button" class="btn btn-outline-success my-2 my-sm-0" onclick="logout()">Logout</button>
+      </nav>
+    </div>
+   <div class="container mt-5" style="max-width: 800px">
+    <h3>Users</h3>
+    <table class="table" id="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Maximum Actions</th>
+          <th scope="col">Actions Allowed</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <script>
+        const url = "http://localhost:8080/users";
+        const userName = localStorage.getItem('userName')
+        const accessToken = localStorage['accessToken'];
+        user = {
+          name: userName,
+          id: localStorage.getItem('userId')
+        }
+    
+        async function getAllUsers(){
+            document.getElementById('userName').innerHTML = localStorage.getItem('userName')
+            try {
+                console.log(accessToken)
+      const resp = await fetch(url, {
+        method: "get",
+        headers: {
+          Accept: 'application/json',
+          'x-access-token': accessToken,
+          'authorization': JSON.stringify(user),
+          'Content-Type': 'application/json'
+        },
+      });
+      const users = await resp.json()
+      users.forEach(user => {
+        const tr = document.createElement("tr");
+        const tdName = document.createElement("td");
+        const tdMax = document.createElement("td");
+        const tdAllowed = document.createElement("td");
+      tdName.innerHTML = user.name
+      tdMax.innerHTML = user.max
+      tdAllowed.innerHTML = user.allowed
+      tr.appendChild(tdName)
+      tr.appendChild(tdMax)
+      tr.appendChild(tdAllowed)
+      const tbody= document.getElementById('tbody')
+      tbody.appendChild(tr)
+      const table = document.getElementById("table");
+        table.appendChild(tbody)
+        
+      });
+    }catch(error){
+        console.log(error)
+        alert('Error!')
+    }
+}
+const logout = () => {
+      localStorage.clear()
+      sessionStorage.clear()
+      window.location.href = 'login.html'
+    }
+        </script>

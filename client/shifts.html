@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" />
+</head>
+
+<body onload="getAllShifts()">
+
+  <div id="navbar">
+    <nav class="navbar navbar-light bg-light">
+      <div class="d-flex flex-row">
+        <a class="navbar-brand post" id="userName" style="color: blue;"></a>
+        <a class="navbar-brand" href="employees.html">Employees</a>
+        <a class="navbar-brand" href="departments.html">Departments</a>
+        <a class="navbar-brand" href="shifts.html">Shifts</a>
+        <a class="navbar-brand" href="users.html">Users</a>
+        
+
+      </div>
+      <button type="button" class="btn btn-outline-success my-2 my-sm-0" onclick="logout()">Logout</button>
+    </nav>
+  </div>
+  <div class="container mt-5" style="max-width: 800px">
+
+
+    <h3>Shifts</h3>
+    <table class="table" id="table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Starting Hour</th>
+          <th scope="col">Ending Hour</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <td>
+          <input type="date" id="date" style="color: red;" required />
+        </td>
+        <td>
+          <input type="text" placeholder="Starting Hour" id="start" style="color: red;" required />
+        </td>
+        <td>
+          <input type='text' placeholder="Ending Hour" id="end" style="color: red;" required />
+       
+      </tbody>
+    </table>
+    <button class="btn btn-primary m-2" type="button" onclick="save()">
+      Save
+    </button>
+    <button class="btn btn-danger m-2" type="button" onclick="cancel()">
+      Cancel
+    </button>
+  </div>
+
+
+  <script>
+    const url = 'http://localhost:8080/shifts'
+    const selectedNames = []
+    const accessToken = localStorage['accessToken']
+    user = {
+      name: localStorage.getItem('userName'),
+      id: localStorage.getItem('userId'),
+      action:true
+    }
+    const getAllShifts = async () => {
+      document.getElementById('userName').innerHTML = localStorage.getItem('userName')
+      const resp = await fetch(url, {
+        method: "get",
+        headers: {
+          Accept: 'application/json',
+          'x-access-token': accessToken,
+          'authorization': JSON.stringify(user),
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const shifts = await resp.json();
+      const tbody = document.getElementById("tbody");
+      //table creating
+      shifts.forEach((shifts) => {
+        const tr = document.createElement("tr");
+        const tdDate = document.createElement("td");
+        const tdStart = document.createElement("td");
+        const tdEnd = document.createElement('td')
+        const tdBtn = document.createElement('td')
+       // 
+        
+        //edit button
+        const btn = document.createElement('button')
+        btn.setAttribute('name', 'edit')
+        btn.className= "btn btn-outline-success"
+        const tbody = document.createElement("tbody");
+
+        btn.addEventListener('click', (event) => {
+          sessionStorage.setItem("shiftId", shifts._id);
+          document.getElementById('date').value = tdDate.innerHTML
+          document.getElementById('start').value = tdStart.innerHTML
+          document.getElementById('end').value = tdEnd.innerHTML
+          //disabling other edit buttons
+          const allEdits = document.getElementsByName('edit')
+          allEdits.forEach((btn) => {
+            btn.disabled = true
+          })
+        
+          tdDate.innerHTML = ''
+          tdStart.innerHTML = ''
+          tdEnd.innerHTML = ''
+          tr.innerHTML = ''
+
+        })
+//employees button
+  //creating employees table
+  const tdEmployess = document.createElement('td')
+          const employeesBtn = document.createElement('button')
+          employeesBtn.className = 'btn btn-link'
+          employeesBtn.setAttribute('id',"employeesBtn")
+          employeesBtn.innerText = 'Employees'
+          tdEmployess.appendChild(employeesBtn)
+          employeesBtn.addEventListener('click', async () => {
+            const employeesUrl = 'http://localhost:8080/employees'
+            employeesBtn.disabled = true
+            const res = await fetch(employeesUrl, {
+              method: "get",
+              headers: {
+                Accept: 'application/json',
+                'x-access-token': accessToken,
+                'authorization': JSON.stringify(user),
+                'Content-Type': 'application/json'
+              },
+            })
+            const employees = await res.json()
+            const employeesTable = document.createElement("table")
+            employeesTable.setAttribute('id', 'employeesTable')
+
+            employees.forEach((emp) => {
+              const tr = document.createElement('tr')
+              const tdName = document.createElement('td')
+              tdName.innerHTML = emp.firstName + " " + emp.lastName + " "
+              const tdChBox = document.createElement('td')
+              const inpt = document.createElement('input')
+              inpt.type = "checkbox"
+              emp.shifts.forEach(s => {
+              if(s._id === shifts._id) {
+             inpt.checked = true
+             inpt.disabled = true
+              }})
+              inpt.setAttribute('id', emp._id)
+              tdChBox.appendChild(inpt)
+              tr.appendChild(tdName)
+              tr.appendChild(tdChBox)
+              employeesTable.appendChild(tr)
+            })
+            const tr2 = document.createElement('tr')
+            const tdButtonAdd = document.createElement('td')
+            const tdButtonCancel = document.createElement('td')
+            const cancel = document.createElement('button')
+            cancel.className='btn btn-outline-dark'
+            tdButtonCancel.appendChild(cancel)
+            cancel.innerText = 'Cancel'
+            cancel.addEventListener('click', () => {
+              employeesTable.remove()
+              employeesBtn.disabled = false
+            })
+            const add = document.createElement('button')
+            add.innerText = 'Add'
+            add.className = 'btn btn-outline-info'
+            add.addEventListener('click', async () => {
+
+              const allInputs = document.getElementById('employeesTable').querySelectorAll('input')
+              allInputs.forEach((inp) => {
+                if (inp.checked) {
+                  selectedNames.push({ _id: inp.id })
+                }
+              })
+                const shift = {"shifts":shifts._id}
+                
+          selectedNames.forEach(async( employeeId) => {
+          
+            const resp2 =await fetch(`http://localhost:8080/employees/${employeeId._id}`,
+              {
+                
+                method: 'PATCH',
+                headers: {
+                  Accept: 'application/json',
+                  'x-access-token': accessToken,
+                  'authorization': JSON.stringify(user),
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(shift)
+              })
+              
+              const result = await resp2.json()
+              
+              })
+              employeesTable.remove()
+              employeesBtn.disabled = false
+            })
+            tdButtonAdd.appendChild(add)
+            tr2.appendChild(tdButtonAdd)
+            tr2.appendChild(tdButtonCancel)
+            employeesTable.appendChild(tr2)
+            tdEmployess.appendChild(employeesTable)
+            
+
+          })
+        const date = new Date(shifts.date)
+        tdDate.innerHTML = shifts.date.slice(0, 10)
+        tr.appendChild(tdDate)
+        tdStart.innerHTML = shifts.startHour
+        tr.appendChild(tdStart)
+        tdEnd.innerHTML = shifts.endHour
+        tr.appendChild(tdEnd)
+        btn.innerText = 'Edit'
+        tdBtn.appendChild(btn)
+        tr.appendChild(tdBtn)
+        tr.appendChild(tdEmployess)
+        tbody.appendChild(tr);
+        const table = document.getElementById("table");
+        table.appendChild(tbody);
+      });
+
+    }
+    const save = async () => {
+      const obj = {
+        date: (document.getElementById('date').value),
+        startHour: Number(document.getElementById('start').value),
+        endHour: Number(document.getElementById('end').value),
+
+      }
+      if (sessionStorage.getItem('shiftId')) {
+       
+          const id = sessionStorage.getItem('shiftId')
+          const resp = await fetch(`${url}/${id}`, {
+            method: 'put',
+            headers: {
+              Accept: 'application/json',
+              'x-access-token': accessToken,
+              'authorization': JSON.stringify(user),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(obj),
+          })
+          
+          const result = await resp.status
+          if (result === 400 ||
+            result === 403 )
+                alert('Error!') 
+         location.reload(true)
+          sessionStorage.removeItem('shiftId')
+          const allInputs = document.querySelectorAll('input')
+          allInputs.forEach(input => input.value = '')
+          
+      } else {
+        console.log(obj)
+          const resp = await fetch(url, {
+            method: 'post',
+            headers: {
+              Accept: 'application/json',
+              'x-access-token': accessToken,
+              'authorization': JSON.stringify(user),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(obj),
+          })
+          const result = await resp.status
+          
+         if (result === 400 ||
+            result === 403 )
+                alert('Error!') 
+          location.reload(true)
+          const allInputs = document.querySelectorAll('input')
+          allInputs.forEach(input => input.value = '')
+
+       
+      }
+    }
+    const cancel = () => {
+      const allInputs = document.querySelectorAll('input')
+      allInputs.forEach(input => input.value = '')
+      const allEdits = document.getElementsByName('edit')
+      allEdits.forEach((btn) => {
+        btn.disabled = false
+      })
+      location.reload()
+
+    }
+    const logout = () => {
+      localStorage.clear()
+      sessionStorage.clear()
+      window.location.href = 'login.html'
+    }
+  </script>
+</body>
